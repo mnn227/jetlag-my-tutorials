@@ -1,13 +1,13 @@
 import { initializeAndLaunch } from "../jetlag/Stage";
 import { JetLagGameConfig } from "../jetlag/Config";
-import { ManualMovement } from "../jetlag/Components/Movement";
-import { BoxBody, PolygonBody } from "../jetlag/Components/RigidBody";
+import { ManualMovement, ChaseMovement } from "../jetlag/Components/Movement";
+import { BoxBody, CircleBody, PolygonBody } from "../jetlag/Components/RigidBody";
 import { Destination, Hero, Obstacle } from "../jetlag/Components/Role";
 import { Actor } from "../jetlag/Entities/Actor";
 import { KeyCodes } from "../jetlag/Services/Keyboard";
 import { stage } from "../jetlag/Stage";
 import { GridSystem } from "../jetlag/Systems/Grid";
-import { FilledBox, FilledPolygon, ImageSprite } from "../jetlag/Components/Appearance";
+import { FilledBox, FilledPolygon, TextSprite, ImageSprite } from "../jetlag/Components/Appearance";
 
 /**
  * Screen dimensions and other game configuration, such as the names of all
@@ -81,7 +81,7 @@ function builder(level: number) {
     stage.keyboard.setKeyUpHandler(KeyCodes.KEY_S, () => { (h.movement as ManualMovement).updateYVelocity(0); });
 
 
-    //Making the 4 buttons to select the menu page
+    // mnn227 Making the 4 buttons to select the menu page
     // Button 1/4
     new Actor({
       appearance: new FilledPolygon({ vertices: [0, 0, 0, .75, 4, .75, 4, 0], fillColor: "#000000", lineWidth: 4, lineColor: "#00ff00" }),
@@ -264,6 +264,85 @@ function builder(level: number) {
   }
 
   if (level == 11) {
+    stage.score.onWin = { level: 12, builder };
+    stage.score.onLose = { level, builder };
+    // Draw a grid on the screen, to help us think about the positions of actors.
+    // Remember that when `hitBoxes` is true, clicking the screen will show
+    // coordinates in the developer console.
+    GridSystem.makeGrid(stage.world, { x: 0, y: 0 }, { x: 1.6, y: .9 });
+    // set up the background
+    stage.backgroundColor = "#17b4ff";
+    stage.background.addLayer({ anchor: { cx: 0, cy: 4.5, }, imageMaker: () => new ImageSprite({ width: 16, height: 9, img: "galaxybackgroundstatic.png" }), speed: 0 });
+    stage.world.camera.setBounds(0, 0, 16, 9);
+    // Make a hero
+    let h = new Actor({
+      appearance: new ImageSprite({ width: 3, height: 2, img: "venetorsd.png", z: 1 }),
+      rigidBody: new PolygonBody({ cx: 8, cy: 4.5, vertices: [0, -1, 1.4, .25, 0, 1, -1.4, .25] }, { collisionsEnabled: false }),
+      role: new Hero(),
+      movement: new ManualMovement(),
+    });
+
+
+
+    new Actor({
+      appearance: new ImageSprite({ width: 1, height: 1, img: "astrohomep.png" }),
+      rigidBody: new CircleBody({ cx: 1, cy: 1, radius: 0.4 }, { dynamic: true }),
+      movement: new ChaseMovement({ target: h, speed: 1 }),
+      role: new Obstacle(),
+      extra: { weak: true }
+    });
+
+
+
+    // Make an obstacle that is a rectangle
+    new Actor({
+      rigidBody: new BoxBody({ cx: 300, cy: 4, width: 1, height: 1 }),
+      appearance: new FilledBox({ width: 1, height: 1, fillColor: "#000000", lineWidth: 4, lineColor: "#00ff00" }),
+      role: new Obstacle(),
+    })
+
+    // Make an obstacle that is a polygon
+    new Actor({
+      rigidBody: new PolygonBody({ cx: 1000, cy: 5, vertices: [0, -.5, .5, 0, 0, .5, -1, 0] }),
+      appearance: new FilledPolygon({ vertices: [0, -.5, .5, 0, 0, .5, -1, 0], fillColor: "#000000", lineWidth: 4, lineColor: "#00ff00" }),
+      role: new Obstacle(),
+    })
+
+    new Actor({
+      rigidBody: new PolygonBody({ cx: 700, cy: 5, vertices: [0, -.5, .5, 0, 0, .5, -1, 0] }),
+      appearance: new FilledPolygon({ vertices: [0, -.5, .5, 0, 0, .5, -1, 0], fillColor: "#000000", lineWidth: 4, lineColor: "#00ff00" }),
+      role: new Obstacle(),
+    })
+
+    // imput code here
+    // mnn227 game countdown
+    new Actor({
+      appearance: new TextSprite({ center: false, face: "Arial", size: 20, color: "#0ff000" }, () => stage.score.getWinCountdownRemaining() ? "Time Until Win: " + stage.score.getWinCountdownRemaining()?.toFixed(2) : "Matthew"),
+      rigidBody: new CircleBody({ cx: .1, cy: 1.9, radius: .01 }, { scene: stage.hud })
+    });
+    // mnn227 Automatically win in 5 seconds
+    stage.score.setVictorySurvive(5);
+
+    // mnn227 this lets arrows work as rotation
+    stage.keyboard.setKeyDownHandler(KeyCodes.KEY_LEFT, () => { h.rigidBody.body.SetAngularVelocity(-6); });
+    stage.keyboard.setKeyUpHandler(KeyCodes.KEY_LEFT, () => { h.rigidBody.body.SetAngularVelocity(0); });
+    stage.keyboard.setKeyDownHandler(KeyCodes.KEY_RIGHT, () => { h.rigidBody.body.SetAngularVelocity(6); });
+    stage.keyboard.setKeyUpHandler(KeyCodes.KEY_RIGHT, () => { h.rigidBody.body.SetAngularVelocity(0); });
+    // mnn227 this lets it move laterally
+    stage.keyboard.setKeyDownHandler(KeyCodes.KEY_A, () => { (h.movement as ManualMovement).updateXVelocity(-7.5); });
+    stage.keyboard.setKeyUpHandler(KeyCodes.KEY_A, () => { (h.movement as ManualMovement).updateXVelocity(0); });
+    stage.keyboard.setKeyDownHandler(KeyCodes.KEY_D, () => { (h.movement as ManualMovement).updateXVelocity(7.5); });
+    stage.keyboard.setKeyUpHandler(KeyCodes.KEY_D, () => { (h.movement as ManualMovement).updateXVelocity(0); });
+    // mnn227 this lets it move vertically
+    stage.keyboard.setKeyDownHandler(KeyCodes.KEY_W, () => { (h.movement as ManualMovement).updateYVelocity(-5); });
+    stage.keyboard.setKeyUpHandler(KeyCodes.KEY_W, () => { (h.movement as ManualMovement).updateYVelocity(0); });
+    stage.keyboard.setKeyDownHandler(KeyCodes.KEY_S, () => { (h.movement as ManualMovement).updateYVelocity(5); });
+    stage.keyboard.setKeyUpHandler(KeyCodes.KEY_S, () => { (h.movement as ManualMovement).updateYVelocity(0); });
+
+    //mnn227 esc key works as a back button to the prior page there will be a popup to verify that you want this to happen
+    stage.keyboard.setKeyUpHandler(KeyCodes.KEY_ESCAPE, () => { stage.switchTo(builder, 1) });
+  }
+  if (level == 12) {
     stage.score.onWin = { level, builder };
     stage.score.onLose = { level, builder };
     // Draw a grid on the screen, to help us think about the positions of actors.
